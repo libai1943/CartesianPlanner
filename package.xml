@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>cartesian_planner</name>
+  <version>0.0.1</version>
+  <description>The cartesian_planner package</description>
+  <maintainer email="yakun@hnu.edu.cn">yenkn</maintainer>
+  <license>GPL</license>
+  <author email="libai@hnu.edu.cn">Bai Li</author>
+  <author email="yakun@hnu.edu.cn">Yakun Ouyang</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <exec_depend>roscpp</exec_depend>
+  <build_depend>eigen</build_depend>
+  <build_depend>message_generation</build_depend>
+  <exec_depend>message_runtime</exec_depend>
+
+  <export>
+  </export>
+</package>
