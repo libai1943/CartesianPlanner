@@ -27,6 +27,12 @@ HSL autotools](https://github.com/coin-or-tools/ThirdParty-HSL).
 
 ## Example
 
+
+
+https://user-images.githubusercontent.com/85840949/150943617-f949d10d-c1be-424f-9530-1a21a5c67eef.mp4
+
+
+
 Random test case with 6 pedestrians, 3 moving vehicles and 2 static vehicles.
 
 ```shell
