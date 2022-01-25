@@ -44,7 +44,12 @@ private:
 
   bool GenerateBox(double time, double &x, double &y, double radius, AABox2d &result) const;
 
-  bool CheckCollision(double time, double x, double y, const AABox2d &bound) const;
+  inline bool CheckCollision(double time, double x, double y, const AABox2d &bound) const {
+    Box2d box(bound);
+    box.Shift({x, y});
+
+    return env_->CheckCollision(time, box);
+  }
 
 };
 

@@ -23,13 +23,22 @@ using namespace cartesian_planner;
 
 class CartesianPlannerNode {
 public:
-  explicit CartesianPlannerNode(const ros::NodeHandle &nh) : nh_(nh), env_(new Environment()), planner_(config_, env_) {
+  explicit CartesianPlannerNode(const ros::NodeHandle &nh) : nh_(nh), env_(new Environment(config_)),
+                                                             planner_(config_, env_) {
     center_line_subscriber_ = nh_.subscribe("/center_line", 1, &CartesianPlannerNode::CenterLineCallback, this);
     obstacles_subscriber_ = nh_.subscribe("/obstacles", 1, &CartesianPlannerNode::ObstaclesCallback, this);
     dynamic_obstacles_subscriber_ = nh_.subscribe("/dynamic_obstacles", 1,
                                                   &CartesianPlannerNode::DynamicObstaclesCallback, this);
 
     goal_subscriber_ = nh_.subscribe("/move_base_simple/goal", 1, &CartesianPlannerNode::PlanCallback, this);
+
+    state_.x = 0.0;
+    state_.y = 0.0;
+    state_.theta = 0.0;
+    state_.v = 5.0;
+    state_.phi = 0.0;
+    state_.a = 0.0;
+    state_.omega = 0.0;
   }
 
   void CenterLineCallback(const CenterLineConstPtr &msg) {
@@ -85,17 +94,8 @@ public:
 
   void PlanCallback(const geometry_msgs::PoseStampedConstPtr &msg) {
     DiscretizedTrajectory result;
-    CartesianPlanner::StartState state{};
-    state.x = 0.0;
-    state.y = 0.0;
-    state.theta = 0.0;
-    state.v = config_.dp_nominal_velocity;
-    state.phi = 0.0;
-    state.a = 0.0;
-    state.omega = 0.0;
 
-    if (planner_.Plan(state, result)) {
-      int pt_id = 1;
+    if (planner_.Plan(state_, result)) {
       double dt = config_.tf / (double) (config_.nfe - 1);
       for (int i = 0; i < config_.nfe; i++) {
         double time = dt * i;
@@ -108,16 +108,7 @@ public:
         }
 
         auto &pt = result.data().at(i);
-        auto tires = GenerateTireBoxes({pt.x, pt.y, pt.theta}, atan(pt.kappa * config_.vehicle.wheel_base));
-
-        int tire_id = 1;
-        for (auto &tire: tires) {
-          visualization::PlotPolygon(math::Polygon2d(tire), 0.1, visualization::Color::White, pt_id * (tire_id++),
-                                     "Tires");
-        }
-        visualization::PlotPolygon(math::Polygon2d(config_.vehicle.GenerateBox({pt.x, pt.y, pt.theta})), 0.2,
-                                   visualization::Color::Yellow, pt_id, "Footprint");
-        visualization::Trigger();
+        PlotVehicle(1, {pt.x, pt.y, pt.theta}, atan(pt.kappa * config_.vehicle.wheel_base));
         ros::Duration(dt).sleep();
       }
 
@@ -127,11 +118,25 @@ public:
 
 private:
   ros::NodeHandle nh_;
-  Env env_;
   cartesian_planner::CartesianPlannerConfig config_;
+  Env env_;
   cartesian_planner::CartesianPlanner planner_;
+  CartesianPlanner::StartState state_;
 
   ros::Subscriber center_line_subscriber_, obstacles_subscriber_, dynamic_obstacles_subscriber_, goal_subscriber_;
+
+  void PlotVehicle(int id, const math::Pose &pt, double phi) {
+    auto tires = GenerateTireBoxes({pt.x(), pt.y(), pt.theta()}, phi);
+
+    int tire_id = 1;
+    for (auto &tire: tires) {
+      visualization::PlotPolygon(math::Polygon2d(tire), 0.1, visualization::Color::White, id * (tire_id++),
+                                 "Tires");
+    }
+    visualization::PlotPolygon(math::Polygon2d(config_.vehicle.GenerateBox({pt.x(), pt.y(), pt.theta()})), 0.2,
+                               visualization::Color::Yellow, id, "Footprint");
+    visualization::Trigger();
+  }
 
   std::array<math::Box2d, 4> GenerateTireBoxes(const math::Pose pose, double phi = 0.0) const {
     auto front_pose = pose.extend(config_.vehicle.wheel_base);

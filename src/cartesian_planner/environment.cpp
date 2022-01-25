@@ -37,7 +37,7 @@ void Environment::SetReference(const DiscretizedTrajectory &reference) {
   });
 }
 
-bool Environment::CheckCollision(const math::Box2d &rect) {
+bool Environment::CheckStaticCollision(const math::Box2d &rect) {
   for (auto &obstacle: obstacles_) {
     if (obstacle.HasOverlap(rect)) {
       return true;
@@ -70,6 +70,32 @@ bool Environment::CheckCollision(const math::Box2d &rect) {
     }
   }
 
+  return false;
+}
+
+bool Environment::CheckCollision(double time, const math::Box2d &rect) {
+  if (CheckDynamicCollision(time, rect)) {
+    return true;
+  }
+
+  return CheckStaticCollision(rect);
+}
+
+bool Environment::CheckOptimizationCollision(double time, const math::Pose &pose, double collision_buffer) {
+  math::AABox2d initial_box({-config_.vehicle.radius - collision_buffer, -config_.vehicle.radius - collision_buffer},
+                            {config_.vehicle.radius + collision_buffer, config_.vehicle.radius + collision_buffer});
+
+  double xr, yr, xf, yf;
+  std::tie(xr, yr, xf, yf) = config_.vehicle.GetDiscPositions(pose.x(), pose.y(), pose.theta());
+
+  auto f_box = initial_box, r_box = initial_box;
+  f_box.Shift({xf, yf});
+  r_box.Shift({xr, yr});
+  if (CheckStaticCollision(math::Box2d(f_box)) || CheckStaticCollision(math::Box2d(r_box)) ||
+      CheckDynamicCollision(time, math::Box2d(f_box)) ||
+      CheckDynamicCollision(time, math::Box2d(r_box))) {
+    return true;
+  }
   return false;
 }
 
@@ -130,18 +156,14 @@ void Environment::Visualize() {
     visualization::PlotPolygon(obstacle, 0.1, visualization::Color::Magenta, idx++, "Obstacles");
   }
 
-//  idx = 1;
-//  for (auto &obstacle: dynamic_obstacles_) {
-//    int hue = int((double) idx / dynamic_obstacles_.size() * 320);
-//    for (int i = 0; i < obstacle.size(); i++) {
-//      auto color = visualization::Color::fromHSV(hue, 1.0, 1.0);
-//      color.set_alpha(i / (double) obstacle.size());
-//
-//      visualization::PlotPolygon(obstacle[i].second, 0.1, color, idx * (i + 1), "Dynamic Obstacle");
-//    }
-//
-//    idx++;
-//  }
+  // plot first frame of dynamic obstacles
+  idx = 1;
+  for (auto &obstacle: dynamic_obstacles_) {
+    auto color = visualization::Color::fromHSV(int((double) idx / dynamic_obstacles_.size() * 320), 1.0, 1.0);
+    color.set_alpha(0.5);
+    visualization::PlotPolygon(obstacle[0].second, 0.1, color, idx, "Online Obstacle");
+    idx++;
+  }
 
   visualization::Trigger();
 }

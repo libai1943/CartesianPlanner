@@ -33,7 +33,7 @@ DpPlanner::DpPlanner(const CartesianPlannerConfig &config, const Env &env)
 
 double DpPlanner::GetCollisionCost(StateIndex parent_ind, StateIndex cur_ind) {
   double parent_s = state_.start_s, grandparent_s = state_.start_s;
-  double last_l = state_.start_l;
+  double last_l = state_.start_l, last_s = state_.start_s;
   if (parent_ind.t >= 0) {
     auto &cell = state_space_[parent_ind.t][parent_ind.s][parent_ind.l];
     parent_s = cell.current_s;
@@ -45,15 +45,17 @@ double DpPlanner::GetCollisionCost(StateIndex parent_ind, StateIndex cur_ind) {
 
     auto prev_path = InterpolateLinearly(grandparent_s, cell.parent_l_ind, parent_ind.s, parent_ind.l);
     last_l = prev_path.back().y();
+    last_s = prev_path.back().x();
   }
 
   auto path = InterpolateLinearly(parent_s, parent_ind.l, cur_ind.s, cur_ind.l);
-  double cost = 0.0;
 
   for (int i = 0; i < path.size(); i++) {
     auto &pt = path[i];
     double dl = pt.y() - last_l;
+    double ds = std::max(pt.x() - last_s, kMathEpsilon);
     last_l = pt.y();
+    last_s = pt.x();
 
     auto cart = env_->reference().GetCartesian(pt.x(), pt.y());
     auto ref = env_->reference().EvaluateStation(pt.x());
@@ -63,25 +65,18 @@ double DpPlanner::GetCollisionCost(StateIndex parent_ind, StateIndex cur_ind) {
       return config_.dp_w_obstacle;
     }
 
-    double heading = ref.theta + atan(dl / (1 - ref.kappa * pt.y()));
-    auto footprint = config_.vehicle.GenerateBox({cart.x(), cart.y(), heading});
-
-    for (auto &obstacle: env_->obstacles()) {
-      cost += exp(-cart.DistanceTo(obstacle.center()) / config_.dp_w_obstacle_evasion_exp_denom);
-
-      if (obstacle.HasOverlap(footprint)) {
-        return config_.dp_w_obstacle;
-      }
-    }
+    double heading = ref.theta + atan((dl / ds) / (1 - ref.kappa * pt.y()));
+    math::Pose pose(cart.x(), cart.y(), heading);
 
     double parent_time = parent_ind.t < 0 ? 0.0 : time_[parent_ind.t];
     double time = parent_time + i * (unit_time_ / nseg_);
-    if(env_->CheckDynamicCollision(time, footprint)) {
+
+    if(env_->CheckOptimizationCollision(time, pose)) {
       return config_.dp_w_obstacle;
     }
   }
 
-  return cost / nseg_;
+  return 0.0;
 }
 
 std::pair<double, double> DpPlanner::GetCost(StateIndex parent_ind, StateIndex cur_ind) {
@@ -116,13 +111,12 @@ std::pair<double, double> DpPlanner::GetCost(StateIndex parent_ind, StateIndex c
   }
 
   double cost_lateral = fabs(cur_l);
-  double cost_lateral_change = fabs(parent_l - cur_l) / (station_[cur_ind.s] + 1e-4);
+  double cost_lateral_change = fabs(parent_l - cur_l) / (station_[cur_ind.s] + kMathEpsilon);
   double cost_lateral_change_t = fabs(dl1 - dl0) / unit_time_;
   double cost_longitudinal_velocity = fabs(ds1 / unit_time_ - config_.dp_nominal_velocity);
   double cost_longitudinal_velocity_change = fabs((ds1 - ds0) / unit_time_);
 
   double delta_cost = (
-    config_.dp_w_obstacle_evasion * cost_obstacle +
     config_.dp_w_lateral * cost_lateral +
     config_.dp_w_lateral_change * cost_lateral_change +
     config_.dp_w_lateral_velocity_change * cost_lateral_change_t +
@@ -212,7 +206,7 @@ bool DpPlanner::Plan(double start_x, double start_y, double start_theta, Discret
   // interpolation
   Trajectory data;
   data.resize(config_.nfe);
-  double last_l = state_.start_l;
+  double last_l = state_.start_l, last_s = state_.start_s;
 
   for (int i = 0; i < NT; i++) {
     double parent_s = i > 0 ? waypoints[i - 1].second.current_s : state_.start_s;
@@ -221,7 +215,9 @@ bool DpPlanner::Plan(double start_x, double start_y, double start_theta, Discret
 
     for (int j = 0; j < nseg_; j++) {
       auto dl = segment[j].y() - last_l;
+      auto ds = std::max(segment[j].x() - last_s, kMathEpsilon);
       last_l = segment[j].y();
+      last_s = segment[j].x();
 
       auto xy = env_->reference().GetCartesian(segment[j].x(), segment[j].y());
       auto tp = env_->reference().EvaluateStation(segment[j].x());
@@ -229,7 +225,7 @@ bool DpPlanner::Plan(double start_x, double start_y, double start_theta, Discret
       data[n].s = segment[j].x();
       data[n].x = xy.x();
       data[n].y = xy.y();
-      data[n].theta = tp.theta + atan(dl / (1 - tp.kappa * segment[j].y()));
+      data[n].theta = tp.theta + atan((dl / ds) / (1 - tp.kappa * segment[j].y()));
     }
   }
   data[0].theta = state_.start_theta;

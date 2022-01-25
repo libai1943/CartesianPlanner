@@ -62,16 +62,6 @@ struct CartesianPlannerConfig {
   double dp_w_longitudinal_velocity_change = 1.0;
 
   /**
-   * evasion from obstacles
-   */
-  double dp_w_obstacle_evasion = 5.0;
-
-  /**
-   * exp term for obstacle evasion, larger exp means slower decreasing
-   */
-  double dp_w_obstacle_evasion_exp_denom = 10.0;
-
-  /**
    * maximum iteration count for corridor expansion
    */
   int corridor_max_iter = 1000;
@@ -95,12 +85,6 @@ struct CartesianPlannerConfig {
    * weighting parameter in Eq.(4)
    */
   double opti_w_rw = 5.0;
-
-  /**
-   * Number of discs used to cover the vehicle body
-   * * NOT IMPLEMENTATION YET *
-   */
-  int opti_n_disc = 2;
 
   /**
    * Maximum iteration number in Alg.1

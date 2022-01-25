@@ -17,6 +17,7 @@ namespace cartesian_planner {
 bool CartesianPlanner::Plan(const StartState &state, DiscretizedTrajectory &result) {
   DiscretizedTrajectory coarse_trajectory;
   if(!dp_.Plan(state.x, state.y, state.theta, coarse_trajectory)) {
+    ROS_ERROR("DP failed");
     return false;
   }
 
@@ -36,6 +37,7 @@ bool CartesianPlanner::Plan(const StartState &state, DiscretizedTrajectory &resu
 
   States optimized;
   if(!opti_.OptimizeIteratively(coarse_trajectory, opti_constraints, optimized)) {
+    ROS_ERROR("Optimization failed");
     return false;
   }
 

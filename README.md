@@ -4,23 +4,37 @@
  Frenet Frame: A Cartesian-based Trajectory Planning Method" published in IEEE Trans. 
  Intelligent Transportation Systems by Bai Li, Yakun Ouyang, Li Li, and Youmin Zhang.
 
+![OnRoadPlanning](resources/static.png)
 
-## Examples
+## Installation
+
+1. Request **ma27** linear solver code from [HSL for IPOPT](https://www.hsl.rl.ac.uk/ipopt/), follow the installation instructions from [IPOPT
+HSL autotools](https://github.com/coin-or-tools/ThirdParty-HSL).
+
+2. Install deb package from [CASADi Releases](https://github.com/casadi/casadi/releases/tag/3.5.5).
+
+   ```shell
+   sudo dpkg -i libcasadi-v3.5.5.deb
+   ```
+
+3. Clone repository to any catkin workspace and compile workspace
+   
+   ```shell
+   cd ~/catkin_ws/src
+   git clone https://github.com/libai1943/CartesianPlanner.git
+   cd .. && catkin_make
+   ```
+
+## Example
+
+Random test case with 6 pedestrians, 3 moving vehicles and 2 static vehicles.
 
 ```shell
 roslaunch cartesian_planner pedestrian_test.launch
 ```
 
-## Installation
+**Click anywhere in Rviz window with the `2D Nav Goal` Tool to start planning.**
 
-Request **ma27** linear solver code from [HSL for IPOPT](https://www.hsl.rl.ac.uk/ipopt/), follow the installation instructions from [IPOPT
-HSL autotools](https://github.com/coin-or-tools/ThirdParty-HSL).
-
-Install deb package from [CASADi Releases](https://github.com/casadi/casadi/releases/tag/3.5.5).
-
-```shell
-sudo dpkg -i libcasadi-v3.5.5.deb
-```
 
 ## Acknowledgement
 

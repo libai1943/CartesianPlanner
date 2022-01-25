@@ -115,7 +115,7 @@ double TrajectoryNLP::SolveIteratively(double w_inf, const Constraints &constrai
 
   lb_xf = lb_yf = lb_xr = lb_yr = -inf * identity;
   ub_xf = ub_yf = ub_xr = ub_yr = inf * identity;
-  for (int i = 1; i < config_.nfe - 1; i++) {
+  for (int i = 1; i < config_.nfe; i++) {
     lb_xf(i) = constraints.front_bound[i][0];
     ub_xf(i) = constraints.front_bound[i][1];
     lb_yf(i) = constraints.front_bound[i][2];

@@ -189,16 +189,4 @@ bool TrajectoryOptimizer::GenerateBox(double time, double &x, double &y, double 
             {x + incremental[1], y + incremental[3]}};
   return true;
 }
-
-bool TrajectoryOptimizer::CheckCollision(double time, double x, double y, const AABox2d &bound) const {
-  Box2d box(bound);
-  box.Shift({x, y});
-
-  if (env_->CheckDynamicCollision(time, box)) {
-    return true;
-  }
-
-  return env_->CheckCollision(box);
-}
-
 }

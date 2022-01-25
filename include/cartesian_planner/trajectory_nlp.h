@@ -43,7 +43,7 @@ private:
   Dict nlp_config_;
   Function iterative_solver_;
   Function infeasibility_evaluator_;
-  
+
   void BuildIterativeNLP();
 };
 

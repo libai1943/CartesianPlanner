@@ -33,7 +33,7 @@ const double NInf = std::numeric_limits<double>::min();
 
 constexpr int NT = 5;
 constexpr int NS = 7;
-constexpr int NL = 5;
+constexpr int NL = 10;
 
 class DpPlanner {
 public:

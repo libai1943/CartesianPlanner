@@ -9,7 +9,7 @@
      Frenet Frame: A Cartesian-based Trajectory Planning Method",
      IEEE Transactions on Intelligent Transportation Systems, 2022.
 ***********************************************************************************"""
-
+import bisect
 import sys
 import rospy
 import numpy as np
@@ -96,8 +96,8 @@ def transform_footprint(x, y, theta, footprint):
     return np.dot(points, rotation.T)[:, :2]
 
 
-def get_random_reference_points(center_line, count, start_idx=100):
-    random_stations = np.random.randint(start_idx, len(center_line.points), count)
+def get_random_reference_points(center_line, count, start_idx=100, back_idx=500):
+    random_stations = np.random.randint(start_idx, len(center_line.points) - back_idx, count)
 
     ref_s = []
     ref_x = []
@@ -112,7 +112,7 @@ def get_random_reference_points(center_line, count, start_idx=100):
 
 
 def generate_random_vehicles(center_line, count, length=4.0, width=2.0):
-    lateral_samples = np.array([1.0, 0.0, -3.0])
+    lateral_samples = np.array([1.0, 0.0, -4.0])
     random_laterals = lateral_samples[np.random.randint(0, len(lateral_samples), count)]
 
     ref = get_random_reference_points(center_line, count)
@@ -128,7 +128,37 @@ def generate_random_vehicles(center_line, count, length=4.0, width=2.0):
     return msg
 
 
-def generate_random_pedestrian(center_line, count, dt=0.1, ego_velocity=18.0):
+def generate_random_dynamic_vehicles(center_line, count, horizon=16.0, dt=0.1):
+    cls = [pt.s for pt in center_line.points]
+    max_s = cls[-1]
+    ref = get_random_reference_points(center_line, count, back_idx=1000)
+    ref_center_line = np.array([[pt.s, pt.x, pt.y, pt.theta] for pt in center_line.points])
+
+    velocities = 4 + 2 * np.random.rand(count)
+    footprint = transform_footprint(0, 0, 0, [4.0, 2.0])
+    vehicle = Polygon(points=[Point32(x=row[0], y=row[1]) for row in footprint])
+
+    msg = DynamicObstacles()
+    for i in range(count):
+        start_s = ref[i, 0]
+        start_s_ind = bisect.bisect_left(cls, start_s)
+
+        traj_len = int(horizon / dt)
+        s_ind = np.linspace(start_s_ind, bisect.bisect_left(cls, min(max_s, start_s + velocities[i] * horizon)),
+                            traj_len, dtype=np.int)
+
+        rand_lateral = 0.0 if np.random.rand() > 0.5 else -4.0
+        traj_x, traj_y = convert_frenet_to_cartesian(ref_center_line[s_ind, :], np.repeat(rand_lateral, traj_len))
+        traj_theta = ref_center_line[s_ind, 3]
+
+        tps = [DynamicTrajectoryPoint(time=j * dt, x=traj_x[j], y=traj_y[j], theta=traj_theta[j]) for j in
+               range(traj_len)]
+        msg.obstacles.append(DynamicObstacle(polygon=vehicle, trajectory=tps))
+
+    return msg
+
+
+def generate_random_pedestrian(center_line, count, dt=0.1, ego_velocity=20.0):
     ref = get_random_reference_points(center_line, count)
 
     velocities = 0.4 + np.random.rand(count)
@@ -184,8 +214,14 @@ def main():
         obstacles_pub = rospy.Publisher('/obstacles', Obstacles, queue_size=1, latch=True)
         obstacles_pub.publish(static_obstacles)
 
-    if 'dynamic' in sys.argv:
-        dynamic_obstacles = generate_random_pedestrian(center_line, 8)
+    if 'dynamic' in sys.argv or 'pedestrian' in sys.argv:
+        dynamic_obstacles = DynamicObstacles()
+        if 'pedestrian' in sys.argv:
+            dynamic_obstacles.obstacles.extend(generate_random_pedestrian(center_line, 6).obstacles)
+
+        if 'dynamic' in sys.argv:
+            dynamic_obstacles.obstacles.extend(generate_random_dynamic_vehicles(center_line, 3).obstacles)
+
         dynamic_obstacles_pub = rospy.Publisher('/dynamic_obstacles', DynamicObstacles, queue_size=1, latch=True)
         dynamic_obstacles_pub.publish(dynamic_obstacles)
 
