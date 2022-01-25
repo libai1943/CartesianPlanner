@@ -13,6 +13,8 @@ import bisect
 import sys
 import rospy
 import numpy as np
+import pickle
+import os
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
 from cartesian_planner.msg import CenterLine, CenterLinePoint, Obstacles, DynamicObstacles, DynamicObstacle, \
@@ -209,11 +211,13 @@ def main():
     center_pub = rospy.Publisher('/center_line', CenterLine, queue_size=1, latch=True)
     center_pub.publish(center_line)
 
+    static_obstacles = None
     if 'static' in sys.argv:
         static_obstacles = generate_random_vehicles(center_line, 2)
         obstacles_pub = rospy.Publisher('/obstacles', Obstacles, queue_size=1, latch=True)
         obstacles_pub.publish(static_obstacles)
 
+    dynamic_obstacles = None
     if 'dynamic' in sys.argv or 'pedestrian' in sys.argv:
         dynamic_obstacles = DynamicObstacles()
         if 'pedestrian' in sys.argv:
@@ -224,6 +228,12 @@ def main():
 
         dynamic_obstacles_pub = rospy.Publisher('/dynamic_obstacles', DynamicObstacles, queue_size=1, latch=True)
         dynamic_obstacles_pub.publish(dynamic_obstacles)
+
+    if 'serialize' in sys.argv:
+        pickle_path = os.path.join(os.path.dirname(__file__), 'reference.pickle')
+        with open(pickle_path, 'w') as f:
+            pickle.dump({"center": center_line, "static": static_obstacles, "dynamic": dynamic_obstacles}, f)
+            print('pickle saved to %s' % pickle_path)
 
     if 'path' in sys.argv:
         ref_pub = rospy.Publisher('/center_line_path', Path, queue_size=1, latch=True)

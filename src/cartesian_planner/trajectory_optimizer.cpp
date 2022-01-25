@@ -19,7 +19,7 @@
 namespace cartesian_planner {
 
 TrajectoryOptimizer::TrajectoryOptimizer(const CartesianPlannerConfig &config, const Env &env)
-  : env_(env), nlp_(config) {
+  : config_(config), env_(env), nlp_(config) {
   vehicle_ = config_.vehicle;
 }
 

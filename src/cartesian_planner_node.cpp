@@ -23,8 +23,10 @@ using namespace cartesian_planner;
 
 class CartesianPlannerNode {
 public:
-  explicit CartesianPlannerNode(const ros::NodeHandle &nh) : nh_(nh), env_(new Environment(config_)),
-                                                             planner_(config_, env_) {
+  explicit CartesianPlannerNode(const ros::NodeHandle &nh) : nh_(nh) {
+    env_ = std::make_shared<Environment>(config_);
+    planner_ = std::make_shared<CartesianPlanner>(config_, env_);
+
     center_line_subscriber_ = nh_.subscribe("/center_line", 1, &CartesianPlannerNode::CenterLineCallback, this);
     obstacles_subscriber_ = nh_.subscribe("/obstacles", 1, &CartesianPlannerNode::ObstaclesCallback, this);
     dynamic_obstacles_subscriber_ = nh_.subscribe("/dynamic_obstacles", 1,
@@ -95,7 +97,7 @@ public:
   void PlanCallback(const geometry_msgs::PoseStampedConstPtr &msg) {
     DiscretizedTrajectory result;
 
-    if (planner_.Plan(state_, result)) {
+    if (planner_->Plan(state_, result)) {
       double dt = config_.tf / (double) (config_.nfe - 1);
       for (int i = 0; i < config_.nfe; i++) {
         double time = dt * i;
@@ -120,7 +122,7 @@ private:
   ros::NodeHandle nh_;
   cartesian_planner::CartesianPlannerConfig config_;
   Env env_;
-  cartesian_planner::CartesianPlanner planner_;
+  std::shared_ptr<cartesian_planner::CartesianPlanner> planner_;
   CartesianPlanner::StartState state_;
 
   ros::Subscriber center_line_subscriber_, obstacles_subscriber_, dynamic_obstacles_subscriber_, goal_subscriber_;
