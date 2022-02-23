@@ -9,8 +9,6 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
 )
 
-find_package(Eigen3 REQUIRED NO_MODULE)
-
 add_message_files(
   FILES
   CenterLinePoint.msg
@@ -34,7 +32,17 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-option(VISUALIZATION "Compile Visualization Code" ON)
+option(WITH_HSL "Compile solver with coinhsl" ON)
+
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+find_package(HSL)
+if(NOT ${HSL_FOUND})
+  set(WITH_HSL OFF)
+endif()
+
+if(WITH_HSL)
+  add_definitions(-DWITH_HSL)
+endif()
 
 set(SRC
   src/cartesian_planner/math/aabox2d.cpp
@@ -48,20 +56,15 @@ set(SRC
   src/cartesian_planner/environment.cpp
   src/cartesian_planner/dp_planner.cpp
   src/cartesian_planner/trajectory_nlp.cpp
-  src/cartesian_planner/trajectory_optimizer.cpp)
-
-if(VISUALIZATION)
-  add_definitions(-DROS1_VISUALIZATION)
-  list(APPEND SRC
-    src/cartesian_planner/visualization/plot.cpp
-    src/cartesian_planner/visualization/color.cpp)
-endif()
+  src/cartesian_planner/trajectory_optimizer.cpp
+  src/cartesian_planner/visualization/plot.cpp
+  src/cartesian_planner/visualization/color.cpp)
 
 add_library(${PROJECT_NAME} ${SRC})
 
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(${PROJECT_NAME} Eigen3::Eigen casadi)
+target_link_libraries(${PROJECT_NAME} casadi)
 
 add_executable(${PROJECT_NAME}_node src/cartesian_planner_node.cpp)
 

@@ -17,15 +17,9 @@
 #include <cstdio>
 #include <cmath>
 
-#ifdef ROS2_VISUALIZATION
-#include <std_msgs/msg/color_rgba.hpp>
-using std_msgs::msg::ColorRGBA;
-#elif ROS1_VISUALIZATION
-
 #include <std_msgs/ColorRGBA.h>
 
 using std_msgs::ColorRGBA;
-#endif
 
 namespace cartesian_planner {
 namespace visualization {
@@ -42,8 +36,6 @@ public:
     return buf;
   }
 
-#if defined(ROS2_VISUALIZATION) || defined(ROS1_VISUALIZATION)
-
   ColorRGBA toColorRGBA() const {
     ColorRGBA color;
     color.r = r_;
@@ -52,8 +44,6 @@ public:
     color.a = a_;
     return color;
   }
-
-#endif
 
   static Color Black;
   static Color Grey;

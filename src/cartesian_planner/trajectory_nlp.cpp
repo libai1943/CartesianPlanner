@@ -15,9 +15,13 @@ namespace cartesian_planner {
 
 TrajectoryNLP::TrajectoryNLP(const CartesianPlannerConfig &config) : config_(config) {
   nlp_config_ = {{"ipopt", Dict({
-                                  {"linear_solver", "ma27"},
-                                  {"print_level",   3},
-                                })}};
+#ifdef WITH_HSL
+    {"linear_solver", "ma27"},
+#else
+    {"linear_solver", "mumps"},
+#endif
+    {"print_level",   5},
+    })}};
 
   BuildIterativeNLP();
 }

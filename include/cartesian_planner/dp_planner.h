@@ -12,7 +12,6 @@
 #pragma once
 
 #include <tuple>
-#include <Eigen/Dense>
 #include <limits>
 #include <cmath>
 #include <memory>
