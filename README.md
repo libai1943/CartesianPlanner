@@ -98,4 +98,4 @@ Special thanks to [Baidu Apollo](https://github.com/ApolloAuto/apollo) for commo
 Copyright (C) 2022 Bai Li and Yakun Ouyang
 
 Users must cite the following article if they use the source codes to conduct simulations in their new publications.
-Bai Li, Yakun Ouyang, Li Li, and Youmin Zhang, “Autonomous driving on curvy roads without reliance on Frenet frame: A Cartesian-based trajectory planning method,” IEEE Transactions on Intelligent Transportation Systems, available at https://doi.org/10.1109/TITS.2022.3145389, accepted, 2022.
+Bai Li, Yakun Ouyang, Li Li, and Youmin Zhang, “Autonomous driving on curvy roads without reliance on Frenet frame: A Cartesian-based trajectory planning method,” IEEE Transactions on Intelligent Transportation Systems, vol. 23, no. 9, pp. 15729 - 15741, 2022. available at https://doi.org/10.1109/TITS.2022.3145389
