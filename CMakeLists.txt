@@ -1,7 +1,36 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5)
 project(cartesian_planner)
 
-add_compile_options(-std=c++11 -O3)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_BUILD_TYPE Release)
+
+# download and build CasADi library
+find_package(LAPACK REQUIRED) # required by Ipopt: apt install liblapack-dev
+
+set(VENDOR_PATH "${CMAKE_BINARY_DIR}/vendor")
+set(CASADI_URL https://github.com/casadi/casadi/releases/download/3.6.3/casadi-3.6.3.tar.gz)
+
+include(ExternalProject)
+ExternalProject_Add(
+  casadi-external
+  URL ${CASADI_URL}
+  PREFIX ${VENDOR_PATH}
+  UPDATE_COMMAND ""
+  CMAKE_ARGS
+  -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+  -DCMAKE_PREFIX_PATH=<INSTALL_DIR>
+  -DWITH_EXAMPLES=OFF
+  -DWITH_IPOPT=ON
+  -DWITH_BUILD_REQUIRED=ON
+)
+file(MAKE_DIRECTORY "${VENDOR_PATH}/include")
+add_library(casadi SHARED IMPORTED)
+add_dependencies(casadi casadi-external)
+set_target_properties(casadi PROPERTIES
+  IMPORTED_LOCATION "${VENDOR_PATH}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}casadi${CMAKE_SHARED_LIBRARY_SUFFIX}"
+  IMPORTED_IMPLIB "${VENDOR_PATH}/lib/${CMAKE_IMPORT_LIBRARY_PREFIX}casadi${CMAKE_IMPORT_LIBRARY_SUFFIX}"
+  INTERFACE_INCLUDE_DIRECTORIES "${VENDOR_PATH}/include")
+
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
