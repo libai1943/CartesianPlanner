@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """***********************************************************************************
      C++ Source Codes for "Autonomous Driving on Curvy Roads without Reliance on
      Frenet Frame: A Cartesian-based Trajectory Planning Method".
@@ -231,7 +231,7 @@ def main():
 
     if 'serialize' in sys.argv:
         pickle_path = os.path.join(os.path.dirname(__file__), 'reference.pickle')
-        with open(pickle_path, 'w') as f:
+        with open(pickle_path, 'wb') as f:
             pickle.dump({"center": center_line, "static": static_obstacles, "dynamic": dynamic_obstacles}, f)
             print('pickle saved to %s' % pickle_path)
 

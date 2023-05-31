@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """***********************************************************************************
      C++ Source Codes for "Autonomous Driving on Curvy Roads without Reliance on
      Frenet Frame: A Cartesian-based Trajectory Planning Method".
@@ -22,10 +22,10 @@ def main():
     rospy.init_node('pickle_publisher')
 
     pickle_path = path.join(path.dirname(__file__), 'reference.pickle')
-    if sys.argv[0].endswith('.pickle'):
-        pickle_path = sys.argv[0]
+    if sys.argv[1].endswith('.pickle'):
+        pickle_path = sys.argv[1]
 
-    with open(pickle_path) as f:
+    with open(pickle_path, 'rb') as f:
         reference = pickle.load(f)
 
         center_pub = rospy.Publisher('/center_line', CenterLine, queue_size=1, latch=True)
